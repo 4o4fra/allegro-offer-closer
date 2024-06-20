@@ -5,10 +5,8 @@ const path = require("node:path");
 
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data.json'), 'utf8'));
 
-router.get('/', async (req, res) => {
-    const externalId = req.query.externalId;
+async function getOffers(data, shippingRatesId) {
     const results = [];
-
     for (let account of data) {
         const bearerToken = account.access_token;
 
@@ -19,8 +17,11 @@ router.get('/', async (req, res) => {
                     'Accept': 'application/vnd.allegro.public.v1+json'
                 },
                 params: {
-                    'external.id': externalId,
-                    'publication.status': 'ACTIVE'
+                    'sort': 'stock.available',
+                    'delivery.shippingRates.id': shippingRatesId,
+                    'publication.status': 'ACTIVE',
+                    'sellingMode.format': 'BUY_NOW',
+                    'limit': 50
                 }
             });
 
@@ -36,8 +37,31 @@ router.get('/', async (req, res) => {
             });
         }
     }
+    return results;
+}
 
+async function getOfferWithCertainStock(stockCount, shippingRatesId) {
+    const results = await getOffers(data, shippingRatesId);
+    let filteredOffers = [];
+    results.forEach(result => {
+        result.data.offers.forEach(offer => {
+            if (offer.stock.available === Number(stockCount)) {
+                filteredOffers.push(offer);
+            }
+        });
+    });
+    return filteredOffers;
+}
+
+router.get('/', async (req, res) => {
+    const shippingRatesId = req.query.shippingRatesId ?? null;
+    const results = await getOffers(data, shippingRatesId);
     res.json(results);
+});
+
+router.get('/:stockCount', async (req, res) => {
+    const offers = await getOfferWithCertainStock(req.params.stockCount, req.query.shippingRatesId);
+    res.status(200).json(offers);
 });
 
 module.exports = router;
