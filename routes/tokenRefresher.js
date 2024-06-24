@@ -26,7 +26,7 @@ const refreshTokenFunc = async () => {
             account.refresh_token = response.data.refresh_token;
             console.log(`Token refreshed successfully for account ${account.id}.`);
         } catch (error) {
-            console.error(`Failed to refresh token for account ${account.id}: ${error.message}`);
+            console.error(`Failed to refresh token for account ${account.id}: ${error.response.data}`);
             return;
         }
     }

@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
 
         res.json(response.data);
     } catch (error) {
-        console.error(error);
+        console.error(error.response.data);
         res.status(500).json({'error': 'An error occurred while trying to authenticate with Allegro.'});
     }
 });
@@ -88,7 +88,7 @@ router.get('/refresh', async (req, res) => {
         await refreshTokenFunc();
         res.status(204).json();
     } catch (error) {
-        console.error(error);
+        console.error(error.response.data);
         res.status(500).json();
     }
 });
