@@ -3,8 +3,15 @@ const fs = require('fs');
 const axios = require('axios');
 const path = require("node:path");
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data.json'), 'utf8'));
+let data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data.json'), 'utf8'));
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '../config.json'), 'utf8'));
+
+fs.watch(path.join(__dirname, '../data.json'), (eventType, filename) => {
+    if (eventType === 'change') {
+        data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data.json'), 'utf8'));
+        console.log('data.json has been updated, data refreshed.');
+    }
+});
 
 async function getOffers(data, shippingRatesId) {
     const results = [];
