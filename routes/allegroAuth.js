@@ -11,12 +11,12 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-router.get((req, res, next) => {
-    if (req.parameters.sxsrf !== process.env.X_AUTH_TOKEN) {
+router.use((req, res, next) => {
+    if (req.get('X-AUTH-TOKEN') !== process.env.X_AUTH_TOKEN) {
         return res.status(401).json();
     }
     next();
-})
+});
 
 router.get('/', async (req, res) => {
     try {
@@ -83,7 +83,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/refresh', async (req, res) => {
+router.post('/refresh', async (req, res) => {
     try {
         await refreshTokenFunc();
         res.status(204).json();
