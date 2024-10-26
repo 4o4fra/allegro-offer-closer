@@ -33,6 +33,7 @@ const refreshTokenFunc = async () => {
     fs.writeFileSync(path.join(__dirname, '../data.json'), JSON.stringify(data, null, 2));
 };
 
+refreshTokenFunc().then(() => console.log('Token after-start refreshment process has been started.'));
 setInterval(refreshTokenFunc, 5 * 60 * 60 * 1000);
 
 module.exports = refreshTokenFunc;

@@ -18,33 +18,37 @@ async function getOffers(data) {
     const results = [];
     for (let account of data) {
         const bearerToken = account.access_token;
-        const shippingRatesId = shippingRatesIds[account.id] ?? '';
-        try {
-            const response = await axios.get('https://api.allegro.pl/sale/offers', {
-                headers: {
-                    'Authorization': `Bearer ${bearerToken}`,
-                    'Accept': 'application/vnd.allegro.public.v1+json'
-                },
-                params: {
-                    'sort': 'stock.available',
-                    'delivery.shippingRates.id': shippingRatesId,
-                    'publication.status': 'ACTIVE',
-                    'sellingMode.format': 'BUY_NOW',
-                    'limit': 50
-                }
-            });
+        const shippingRatesIdList = shippingRatesIds[account.id] ?? [];
+        for (let shippingRatesId of shippingRatesIdList) {
+            try {
+                const response = await axios.get('https://api.allegro.pl/sale/offers', {
+                    headers: {
+                        'Authorization': `Bearer ${bearerToken}`,
+                        'Accept': 'application/vnd.allegro.public.v1+json'
+                    },
+                    params: {
+                        'sort': 'stock.available',
+                        'delivery.shippingRates.id': shippingRatesId,
+                        'publication.status': 'ACTIVE',
+                        'sellingMode.format': 'BUY_NOW',
+                        'limit': 80
+                    }
+                });
 
-            results.push({
-                accountId: account.id,
-                data: response.data
-            });
-        } catch (error) {
-            console.error(error.response.data);
-            results.push({
-                accountId: account.id,
-                error: 'An error occurred while trying to fetch products.',
-                offers: []
-            });
+                results.push({
+                    accountId: account.id,
+                    shippingRatesId: shippingRatesId,
+                    data: response.data
+                });
+            } catch (error) {
+                console.error(error.response.data);
+                results.push({
+                    accountId: account.id,
+                    shippingRatesId: shippingRatesId,
+                    error: 'An error occurred while trying to fetch products.',
+                    offers: []
+                });
+            }
         }
     }
     return results;
@@ -58,7 +62,7 @@ async function getOffersWithCertainStock(stockCount) {
             if (offer.stock.available === Number(stockCount)) {
                 filteredOffers.push({
                     id: offer.id,
-                    accountId: index
+                    accountId: index - 1
                 });
             }
         });
@@ -80,6 +84,7 @@ setInterval(async () => {
     const offers = await getOffersWithCertainStock(config.stockCount);
     for (let offer of offers) {
         try {
+            console.log(`Trying to end offer ${offer.id}.`);
             const response = await axios.patch(`https://api.allegro.pl/sale/product-offers/${offer.id}`, {
                 'stock': {
                     'available': 0
@@ -93,7 +98,7 @@ setInterval(async () => {
             });
             console.log(`Offer ${offer.id} ended successfully. Response code: ${response.status}.`);
         } catch (error) {
-            console.error(`An error occurred while trying to remove offer ${offer.id}.`, error.response.data);
+            console.error(`An error occurred while trying to remove offer ${offer.id}.`, error.response);
         }
     }
 }, 10000);
